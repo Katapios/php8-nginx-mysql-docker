@@ -1,0 +1,80 @@
+version: '3.7'
+
+services:
+
+  # Nginx service
+  nginx:
+    image: nginx:alpine
+    container_name: php-nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./www:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    depends_on:
+      - php
+    networks:
+      mynetwork:
+
+  # PHP service
+  php:
+#    tty: true # Enables debugging capabilities when attached to this container.
+    build: docker/php80
+#    ports:
+#      - 9000:9000
+    container_name: php-app
+    volumes:
+      - ./www:/var/www
+      - ./tmp/grinds:/tmp/grinds
+    environment:
+      XDEBUG_CONFIG: client_host=${MYIP}
+      DEBUG: 1
+#      PHP_IDE_CONFIG: serverName=localhost
+    working_dir: /var/www
+    networks:
+      mynetwork:
+
+  # MySQL database service
+  mysql:
+    image: 'mariadb'
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=+Tr+()8]!szl[HQIsoT5 --execute \"SHOW DATABASES;\""
+      interval: 2s
+      timeout: 20s
+      retries: 10
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database:/var/lib/mysql
+      - ./logs/mysql:/var/log/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: +Tr+()8]!szl[HQIsoT5
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: bitrix
+      MYSQL_PASSWORD: +Tr+()8]!szl[HQIsoT5
+    command: ['--character-set-server=utf8', '--collation-server=utf8_unicode_ci', '--skip-character-set-client-handshake', '--sql-mode=']
+    networks:
+      mynetwork:
+        aliases:
+          - mysql
+
+  # MySQL database service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    links:
+      - mysql:mysql
+    ports:
+      - 8181:80
+    environment:
+      PMA_HOST: mysql
+      MYSQL_USERNAME: bitrix
+      MYSQL_PASSWORD: +Tr+()8]!szl[HQIsoT5
+    networks:
+      mynetwork:
+        aliases:
+          - mysql
+
+
+networks:
+  mynetwork:
+    driver: bridge

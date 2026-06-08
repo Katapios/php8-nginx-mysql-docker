@@ -54,6 +54,7 @@ services:
       - ./database:/var/lib/mysql
       - ./logs/mysql:/var/log/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
     environment:
       MYSQL_ROOT_PASSWORD: "+Tr+()8]!szl[HQIsoT5"
       MYSQL_DATABASE: mydatabase

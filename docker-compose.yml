@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
 
   # Nginx service
@@ -23,11 +21,19 @@ services:
 #    ports:
 #      - 9000:9000
     container_name: php-app
+    depends_on:
+      mysql:
+        condition: service_healthy
     volumes:
       - ./www:/var/www
       - ./tmp/grinds:/tmp/grinds
     environment:
-      XDEBUG_CONFIG: client_host=${MYIP}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: mydatabase
+      DB_USERNAME: bitrix
+      DB_PASSWORD: "+Tr+()8]!szl[HQIsoT5"
+      XDEBUG_CONFIG: client_host=${MYIP:-host.docker.internal}
       DEBUG: 1
 #      PHP_IDE_CONFIG: serverName=localhost
     working_dir: /var/www
@@ -36,9 +42,9 @@ services:
 
   # MySQL database service
   mysql:
-    image: 'mariadb'
+    image: 'mariadb:11.4'
     healthcheck:
-      test: "/usr/bin/mysql --user=root --password=+Tr+()8]!szl[HQIsoT5 --execute \"SHOW DATABASES;\""
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 2s
       timeout: 20s
       retries: 10
@@ -47,12 +53,13 @@ services:
     volumes:
       - ./database:/var/lib/mysql
       - ./logs/mysql:/var/log/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     environment:
-      MYSQL_ROOT_PASSWORD: +Tr+()8]!szl[HQIsoT5
+      MYSQL_ROOT_PASSWORD: "+Tr+()8]!szl[HQIsoT5"
       MYSQL_DATABASE: mydatabase
       MYSQL_USER: bitrix
-      MYSQL_PASSWORD: +Tr+()8]!szl[HQIsoT5
-    command: ['--character-set-server=utf8', '--collation-server=utf8_unicode_ci', '--skip-character-set-client-handshake', '--sql-mode=']
+      MYSQL_PASSWORD: "+Tr+()8]!szl[HQIsoT5"
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci', '--skip-character-set-client-handshake', '--sql-mode=']
     networks:
       mynetwork:
         aliases:
@@ -60,15 +67,16 @@ services:
 
   # MySQL database service
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    links:
-      - mysql:mysql
+    image: phpmyadmin:5.2-apache
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - 8181:80
     environment:
       PMA_HOST: mysql
-      MYSQL_USERNAME: bitrix
-      MYSQL_PASSWORD: +Tr+()8]!szl[HQIsoT5
+      PMA_USER: bitrix
+      PMA_PASSWORD: "+Tr+()8]!szl[HQIsoT5"
     networks:
       mynetwork:
         aliases:
